@@ -1,0 +1,138 @@
+blueprint:
+  name: Continuous dimmer
+  description: Dim a light continuously
+  domain: script
+  input:
+    light_entity:
+      name: Light
+      description: Selected device
+      selector:
+        entity:
+          filter:
+            domain: light
+    dimming_mode:
+      name: Dimming curve
+      description: Determines the curve the light is dimmed with
+      default: mode_linear
+      selector:
+        select:
+          options:
+            - label: Linear
+              value: mode_linear
+            - label: Square root
+              value: mode_sqrt
+          mode: dropdown
+    minimum_value:
+      name: Minimum dimming value
+      description: When reaching this dimming value the script will be stopped
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+          unit_of_measurement: ""
+          mode: box
+    maximum_value:
+      name: Maximum dimming value
+      description: When reaching this dimming value the script will be stopped
+      default: 255
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+          unit_of_measurement: ""
+          mode: box
+    step_value:
+      name: Step value
+      description: Change in brightness each iteration
+      default: 20
+      selector:
+        number:
+          min: -255
+          max: 255
+          step: 1
+          unit_of_measurement: ""
+          mode: box
+    step_duration:
+      name: Step duration
+      description: Time each step takes
+      default: 0.25
+      selector:
+        number:
+          min: 0.1
+          max: 10
+          step: 0.1
+          unit_of_measurement: "s"
+          mode: box
+    transition_time:
+      name: Transition time
+      description: Time each step takes to transition
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.1
+          unit_of_measurement: "s"
+          mode: box
+
+variables:
+  light_entity: !input light_entity
+  dimming_mode: !input dimming_mode
+  minimum_value: !input minimum_value
+  maximum_value: !input maximum_value
+  step_value: !input step_value
+  initial_brightness: "{{ state_attr(light_entity, 'brightness') }}"
+  initial_brightness_sqrt: "{{ 255 * sqrt(initial_brightness / 255) }}"
+
+sequence:
+  - condition: state
+    entity_id: !input light_entity
+    state: "on"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ dimming_mode == 'mode_linear' }}"
+        sequence:
+          - repeat:
+              sequence:
+                - action: light.turn_on
+                  metadata: {}
+                  data:
+                    transition: !input transition_time
+                    brightness: "{{ min([maximum_value, max([minimum_value, initial_brightness + repeat.index * step_value])]) }}"
+                  target:
+                    entity_id: !input light_entity
+                - delay: !input step_duration
+              until:
+                - condition: or
+                  conditions:
+                    - condition: template
+                      value_template: "{{ not minimum_value < initial_brightness + repeat.index * step_value < maximum_value }}"
+                    - condition: state
+                      entity_id: !input light_entity
+                      state: "off"
+      - conditions:
+          - condition: template
+            value_template: "{{ dimming_mode == 'mode_sqrt' }}"
+        sequence:
+          - repeat:
+              sequence:
+                - action: light.turn_on
+                  metadata: {}
+                  data:
+                    transition: !input transition_time
+                    brightness: "{{ min([maximum_value, max([minimum_value, 255 * ((initial_brightness_sqrt + repeat.index * step_value) / 255) ** 2])]) }}"
+                  target:
+                    entity_id: !input light_entity
+                - delay: !input step_duration
+              until:
+                - condition: or
+                  conditions:
+                    - condition: template
+                      value_template: "{{ not minimum_value < 255 * ((initial_brightness_sqrt + repeat.index * step_value) / 255) ** 2 < maximum_value }}"
+                    - condition: state
+                      entity_id: !input light_entity
+                      state: "off"
