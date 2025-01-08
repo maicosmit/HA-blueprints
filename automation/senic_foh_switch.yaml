@@ -1,0 +1,277 @@
+blueprint:
+  name: SENIC Friends of Hue switch
+  description: Trigger actions based on short and long presses
+  domain: automation
+  input:
+    SENIC_device:
+      name: SENIC Friends of Hue device
+      description: Selected device
+      selector:
+        device:
+          filter:
+            - model: Pushbutton transmitter module (PTM 215Z)
+    long_press_threshold:
+      name: Long press threshold
+      description: Time in seconds after a press is regarded as long.
+      default: 0.5
+      selector:
+        number:
+          min: 0.1
+          max: 10
+          step: 0.1
+          unit_of_measurement: "s"
+          mode: box
+
+    top_left_section:
+      name: Top left
+      input:
+        top_left_press:
+          name: Press action
+          description: Execute this action when top left is pressed initially.
+          default: []
+          selector:
+            action: {}
+        top_left_short_release:
+          name: Short release action
+          description: Execute this action when top left is released after a short press.
+          default: []
+          selector:
+            action: {}
+        top_left_long_press:
+          name: Long press action
+          description: Execute this action when top left is pressed for longer then the threshold.
+          default: []
+          selector:
+            action: {}
+        top_left_long_release:
+          name: Long release action
+          description: Execute this action when top left is released after a long press.
+          default: []
+          selector:
+            action: {}
+            
+    bottom_left_section:
+      name: Bottom left
+      input:
+        bottom_left_press:
+          name: Press action
+          description: Execute this action when bottom left is pressed initially.
+          default: []
+          selector:
+            action: {}
+        bottom_left_short_release:
+          name: Short release action
+          description: Execute this action when bottom left is released after a short press.
+          default: []
+          selector:
+            action: {}
+        bottom_left_long_press:
+          name: Long press action
+          description: Execute this action when bottom left is pressed for longer then the threshold.
+          default: []
+          selector:
+            action: {}
+        bottom_left_long_release:
+          name: Long release action
+          description: Execute this action when bottom left is released after a long press.
+          default: []
+          selector:
+            action: {}
+
+    top_right_section:
+      name: Top right
+      input:
+        top_right_press:
+          name: Press action
+          description: Execute this action when top right is pressed initially.
+          default: []
+          selector:
+            action: {}
+        top_right_short_release:
+          name: Short release action
+          description: Execute this action when top right is released after a short press.
+          default: []
+          selector:
+            action: {}
+        top_right_long_press:
+          name: Long press action
+          description: Execute this action when top right is pressed for longer then the threshold.
+          default: []
+          selector:
+            action: {}
+        top_right_long_release:
+          name: Long release action
+          description: Execute this action when top right is released after a long press.
+          default: []
+          selector:
+            action: {}
+            
+    bottom_right_section:
+      name: Bottom right
+      input:
+        bottom_right_press:
+          name: Press action
+          description: Execute this action when bottom right is pressed initially.
+          default: []
+          selector:
+            action: {}
+        bottom_right_short_release:
+          name: Short release action
+          description: Execute this action when bottom right is released after a short press.
+          default: []
+          selector:
+            action: {}
+        bottom_right_long_press:
+          name: Long press action
+          description: Execute this action when bottom right is pressed for longer then the threshold.
+          default: []
+          selector:
+            action: {}
+        bottom_right_long_release:
+          name: Long release action
+          description: Execute this action when bottom right is released after a long press.
+          default: []
+          selector:
+            action: {}
+
+triggers:
+  - domain: mqtt
+    device_id: !input SENIC_device
+    type: action
+    subtype: press_1
+    trigger: device
+    id: press_1
+  - domain: mqtt
+    device_id: !input SENIC_device
+    type: action
+    subtype: press_2
+    trigger: device
+    id: press_2
+  - domain: mqtt
+    device_id: !input SENIC_device
+    type: action
+    subtype: press_3
+    trigger: device
+    id: press_3
+  - domain: mqtt
+    device_id: !input SENIC_device
+    type: action
+    subtype: press_4
+    trigger: device
+    id: press_4
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - press_1
+        sequence:
+          - sequence: !input top_left_press
+          - wait_for_trigger:
+            - domain: mqtt
+              device_id: !input SENIC_device
+              type: action
+              subtype: release_1
+              trigger: device
+            timeout: !input long_press_threshold
+          - if:
+              - condition: template
+                value_template: "{{ wait.completed }}"
+            then:
+              - sequence: !input top_left_short_release
+            else:
+              - sequence: !input top_left_long_press
+              - wait_for_trigger:
+                - domain: mqtt
+                  device_id: !input SENIC_device
+                  type: action
+                  subtype: release_1
+                  trigger: device
+              - sequence: !input top_left_long_release
+
+      - conditions:
+          - condition: trigger
+            id:
+              - press_2
+        sequence:
+          - sequence: !input bottom_left_press
+          - wait_for_trigger:
+            - domain: mqtt
+              device_id: !input SENIC_device
+              type: action
+              subtype: release_2
+              trigger: device
+            timeout: !input long_press_threshold
+          - if:
+              - condition: template
+                value_template: "{{ wait.completed }}"
+            then:
+              - sequence: !input bottom_left_short_release
+            else:
+              - sequence: !input bottom_left_long_press
+              - wait_for_trigger:
+                - domain: mqtt
+                  device_id: !input SENIC_device
+                  type: action
+                  subtype: release_2
+                  trigger: device
+              - sequence: !input bottom_left_long_release
+
+      - conditions:
+          - condition: trigger
+            id:
+              - press_3
+        sequence:
+          - sequence: !input top_right_press
+          - wait_for_trigger:
+            - domain: mqtt
+              device_id: !input SENIC_device
+              type: action
+              subtype: release_3
+              trigger: device
+            timeout: !input long_press_threshold
+          - if:
+              - condition: template
+                value_template: "{{ wait.completed }}"
+            then:
+              - sequence: !input top_right_short_release
+            else:
+              - sequence: !input top_right_long_press
+              - wait_for_trigger:
+                - domain: mqtt
+                  device_id: !input SENIC_device
+                  type: action
+                  subtype: release_3
+                  trigger: device
+              - sequence: !input top_right_long_release
+
+      - conditions:
+          - condition: trigger
+            id:
+              - press_4
+        sequence:
+          - sequence: !input bottom_right_press
+          - wait_for_trigger:
+            - domain: mqtt
+              device_id: !input SENIC_device
+              type: action
+              subtype: release_4
+              trigger: device
+            timeout: !input long_press_threshold
+          - if:
+              - condition: template
+                value_template: "{{ wait.completed }}"
+            then:
+              - sequence: !input bottom_right_short_release
+            else:
+              - sequence: !input bottom_right_long_press
+              - wait_for_trigger:
+                - domain: mqtt
+                  device_id: !input SENIC_device
+                  type: action
+                  subtype: release_4
+                  trigger: device
+              - sequence: !input bottom_right_long_release
+              
+mode: restart
