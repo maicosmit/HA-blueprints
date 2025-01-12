@@ -29,29 +29,18 @@ blueprint:
       selector:
         number:
           min: 0
-          max: 255
+          max: 254
           step: 1
           unit_of_measurement: ""
           mode: box
     maximum_value:
       name: Maximum dimming value
       description: When reaching this dimming value the script will be stopped
-      default: 255
+      default: 254
       selector:
         number:
           min: 0
-          max: 255
-          step: 1
-          unit_of_measurement: ""
-          mode: box
-    step_value:
-      name: Step value
-      description: Change in brightness each iteration
-      default: 20
-      selector:
-        number:
-          min: -255
-          max: 255
+          max: 254
           step: 1
           unit_of_measurement: ""
           mode: box
@@ -83,56 +72,81 @@ variables:
   dimming_mode: !input dimming_mode
   minimum_value: !input minimum_value
   maximum_value: !input maximum_value
-  step_value: !input step_value
+  step_duration: !input step_duration
+  step_value: "{{ speed * 254 * step_duration / 100 }}"
   initial_brightness: "{{ state_attr(light_entity, 'brightness') }}"
-  initial_brightness_sqrt: "{{ 255 * sqrt(initial_brightness / 255) }}"
+  initial_brightness_sqrt: "{{ 254 * sqrt(initial_brightness / 254) }}"
 
+mode: restart
 sequence:
   - condition: state
     entity_id: !input light_entity
     state: "on"
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ dimming_mode == 'mode_linear' }}"
-        sequence:
-          - repeat:
-              sequence:
-                - action: light.turn_on
-                  metadata: {}
-                  data:
-                    transition: !input transition_time
-                    brightness: "{{ min([maximum_value, max([minimum_value, initial_brightness + repeat.index * step_value])]) }}"
-                  target:
-                    entity_id: !input light_entity
-                - delay: !input step_duration
-              until:
-                - condition: or
-                  conditions:
-                    - condition: template
-                      value_template: "{{ not minimum_value < initial_brightness + repeat.index * step_value < maximum_value }}"
-                    - condition: state
-                      entity_id: !input light_entity
-                      state: "off"
-      - conditions:
-          - condition: template
-            value_template: "{{ dimming_mode == 'mode_sqrt' }}"
-        sequence:
-          - repeat:
-              sequence:
-                - action: light.turn_on
-                  metadata: {}
-                  data:
-                    transition: !input transition_time
-                    brightness: "{{ min([maximum_value, max([minimum_value, 255 * ((initial_brightness_sqrt + repeat.index * step_value) / 255) ** 2])]) }}"
-                  target:
-                    entity_id: !input light_entity
-                - delay: !input step_duration
-              until:
-                - condition: or
-                  conditions:
-                    - condition: template
-                      value_template: "{{ not minimum_value < 255 * ((initial_brightness_sqrt + repeat.index * step_value) / 255) ** 2 < maximum_value }}"
-                    - condition: state
-                      entity_id: !input light_entity
-                      state: "off"
+  - if:
+      - condition: template
+        value_template: "{{ speed != 0 }}"
+    then:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ dimming_mode == 'mode_linear' }}"
+            sequence:
+              - repeat:
+                  sequence:
+                    - action: light.turn_on
+                      metadata: {}
+                      data:
+                        transition: !input transition_time
+                        brightness: "{{ min([maximum_value, max([minimum_value, initial_brightness + repeat.index * step_value])]) }}"
+                      target:
+                        entity_id: !input light_entity
+                    - delay: !input step_duration
+                  until:
+                    - condition: or
+                      conditions:
+                        - condition: template
+                          value_template: "{{ not minimum_value < initial_brightness + repeat.index * step_value < maximum_value }}"
+                        - condition: state
+                          entity_id: !input light_entity
+                          state: "off"
+          - conditions:
+              - condition: template
+                value_template: "{{ dimming_mode == 'mode_sqrt' }}"
+            sequence:
+              - repeat:
+                  sequence:
+                    - action: light.turn_on
+                      metadata: {}
+                      data:
+                        transition: !input transition_time
+                        brightness: "{{ min([maximum_value, max([minimum_value, 254 * ((initial_brightness_sqrt + repeat.index * step_value) / 254) ** 2])]) }}"
+                      target:
+                        entity_id: !input light_entity
+                    - delay: !input step_duration
+                  until:
+                    - condition: or
+                      conditions:
+                        - condition: template
+                          value_template: "{{ not minimum_value < 254 * ((initial_brightness_sqrt + repeat.index * step_value) / 254) ** 2 < maximum_value }}"
+                        - condition: state
+                          entity_id: !input light_entity
+                          state: "off"
+  - action: mqtt.publish
+    metadata: {}
+    data:
+      topic: zigbee2mqtt/{{ states[light_entity].object_id }}/set
+      payload: "{\"brightness_move\": 0}"
+      retain: false
+
+fields:
+  speed:
+    selector:
+      number:
+        min: -100
+        max: 100
+        step: 1
+        unit_of_measurement: "%/s"
+        mode: slider
+    required: true
+    default: 0
+    name: Speed
