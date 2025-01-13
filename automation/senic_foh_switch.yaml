@@ -159,6 +159,18 @@ triggers:
     subtype: press_4
     trigger: device
     id: press_4
+  - domain: mqtt
+    device_id: !input SENIC_device
+    type: action
+    subtype: press_1_and_3
+    trigger: device
+    id: press_1_and_3
+  - domain: mqtt
+    device_id: !input SENIC_device
+    type: action
+    subtype: press_2_and_4
+    trigger: device
+    id: press_2_and_4
 
 actions:
   - choose:
@@ -289,5 +301,81 @@ actions:
                           subtype: release_4
                           trigger: device
                       - sequence: !input bottom_right_long_release
+
+      - conditions:
+        - condition: trigger
+          id:
+            - press_1_and_3
+        sequence:
+          - parallel:
+            - sequence: !input top_left_press
+            - sequence: !input top_right_press
+            - sequence:
+              - wait_for_trigger:
+                - domain: mqtt
+                  device_id: !input SENIC_device
+                  type: action
+                  subtype: release_1_and_3
+                  trigger: device
+                timeout: !input long_press_threshold
+              - if:
+                  - condition: template
+                    value_template: "{{ wait.completed }}"
+                then:
+                  - parallel:
+                    - sequence: !input top_left_short_release
+                    - sequence: !input top_right_short_release
+                else:
+                  - parallel:
+                    - sequence: !input top_left_long_press
+                    - sequence: !input top_right_long_press
+                    - sequence:
+                      - wait_for_trigger:
+                        - domain: mqtt
+                          device_id: !input SENIC_device
+                          type: action
+                          subtype: release_1_and_3
+                          trigger: device
+                      - parallel:
+                        - sequence: !input top_left_long_release
+                        - sequence: !input top_right_long_release
+
+      - conditions:
+        - condition: trigger
+          id:
+            - press_2_and_4
+        sequence:
+          - parallel:
+            - sequence: !input bottom_left_press
+            - sequence: !input bottom_right_press
+            - sequence:
+              - wait_for_trigger:
+                - domain: mqtt
+                  device_id: !input SENIC_device
+                  type: action
+                  subtype: release_2_and_4
+                  trigger: device
+                timeout: !input long_press_threshold
+              - if:
+                  - condition: template
+                    value_template: "{{ wait.completed }}"
+                then:
+                  - parallel:
+                    - sequence: !input bottom_left_short_release
+                    - sequence: !input bottom_right_short_release
+                else:
+                  - parallel:
+                    - sequence: !input bottom_left_long_press
+                    - sequence: !input bottom_right_long_press
+                    - sequence:
+                      - wait_for_trigger:
+                        - domain: mqtt
+                          device_id: !input SENIC_device
+                          type: action
+                          subtype: release_2_and_4
+                          trigger: device
+                      - parallel:
+                        - sequence: !input bottom_left_long_release
+                        - sequence: !input bottom_right_long_release
               
 mode: restart
