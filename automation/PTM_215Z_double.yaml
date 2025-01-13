@@ -1,10 +1,10 @@
 blueprint:
-  name: SENIC Friends of Hue switch
+  name: PTM 215Z switch (double rocker)
   description: Trigger actions based on short and long presses
   domain: automation
   input:
-    SENIC_device:
-      name: SENIC Friends of Hue device
+    device:
+      name: PTM 215Z device
       description: Selected device
       selector:
         device:
@@ -136,37 +136,37 @@ blueprint:
 
 triggers:
   - domain: mqtt
-    device_id: !input SENIC_device
+    device_id: !input device
     type: action
     subtype: press_1
     trigger: device
     id: press_1
   - domain: mqtt
-    device_id: !input SENIC_device
+    device_id: !input device
     type: action
     subtype: press_2
     trigger: device
     id: press_2
   - domain: mqtt
-    device_id: !input SENIC_device
+    device_id: !input device
     type: action
     subtype: press_3
     trigger: device
     id: press_3
   - domain: mqtt
-    device_id: !input SENIC_device
+    device_id: !input device
     type: action
     subtype: press_4
     trigger: device
     id: press_4
   - domain: mqtt
-    device_id: !input SENIC_device
+    device_id: !input device
     type: action
     subtype: press_1_and_3
     trigger: device
     id: press_1_and_3
   - domain: mqtt
-    device_id: !input SENIC_device
+    device_id: !input device
     type: action
     subtype: press_2_and_4
     trigger: device
@@ -184,7 +184,7 @@ actions:
             - sequence:
               - wait_for_trigger:
                 - domain: mqtt
-                  device_id: !input SENIC_device
+                  device_id: !input device
                   type: action
                   subtype: release_1
                   trigger: device
@@ -200,7 +200,7 @@ actions:
                     - sequence:
                       - wait_for_trigger:
                         - domain: mqtt
-                          device_id: !input SENIC_device
+                          device_id: !input device
                           type: action
                           subtype: release_1
                           trigger: device
@@ -216,7 +216,7 @@ actions:
             - sequence:
               - wait_for_trigger:
                 - domain: mqtt
-                  device_id: !input SENIC_device
+                  device_id: !input device
                   type: action
                   subtype: release_2
                   trigger: device
@@ -232,7 +232,7 @@ actions:
                     - sequence:
                       - wait_for_trigger:
                         - domain: mqtt
-                          device_id: !input SENIC_device
+                          device_id: !input device
                           type: action
                           subtype: release_2
                           trigger: device
@@ -248,7 +248,7 @@ actions:
             - sequence:
               - wait_for_trigger:
                 - domain: mqtt
-                  device_id: !input SENIC_device
+                  device_id: !input device
                   type: action
                   subtype: release_3
                   trigger: device
@@ -264,7 +264,7 @@ actions:
                     - sequence:
                       - wait_for_trigger:
                         - domain: mqtt
-                          device_id: !input SENIC_device
+                          device_id: !input device
                           type: action
                           subtype: release_3
                           trigger: device
@@ -280,7 +280,7 @@ actions:
             - sequence:
               - wait_for_trigger:
                 - domain: mqtt
-                  device_id: !input SENIC_device
+                  device_id: !input device
                   type: action
                   subtype: release_4
                   trigger: device
@@ -296,7 +296,7 @@ actions:
                     - sequence:
                       - wait_for_trigger:
                         - domain: mqtt
-                          device_id: !input SENIC_device
+                          device_id: !input device
                           type: action
                           subtype: release_4
                           trigger: device
@@ -313,7 +313,7 @@ actions:
             - sequence:
               - wait_for_trigger:
                 - domain: mqtt
-                  device_id: !input SENIC_device
+                  device_id: !input device
                   type: action
                   subtype: release_1_and_3
                   trigger: device
@@ -332,7 +332,7 @@ actions:
                     - sequence:
                       - wait_for_trigger:
                         - domain: mqtt
-                          device_id: !input SENIC_device
+                          device_id: !input device
                           type: action
                           subtype: release_1_and_3
                           trigger: device
@@ -351,7 +351,7 @@ actions:
             - sequence:
               - wait_for_trigger:
                 - domain: mqtt
-                  device_id: !input SENIC_device
+                  device_id: !input device
                   type: action
                   subtype: release_2_and_4
                   trigger: device
@@ -370,7 +370,7 @@ actions:
                     - sequence:
                       - wait_for_trigger:
                         - domain: mqtt
-                          device_id: !input SENIC_device
+                          device_id: !input device
                           type: action
                           subtype: release_2_and_4
                           trigger: device
