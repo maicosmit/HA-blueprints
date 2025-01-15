@@ -1,0 +1,259 @@
+blueprint:
+  name: PTM 215Z switch (single rocker)
+  description: Trigger actions based on short and long presses
+  domain: automation
+  input:
+    device:
+      name: PTM 215Z device
+      description: Selected device
+      selector:
+        device:
+          filter:
+            - model: Pushbutton transmitter module (PTM 215Z)
+    long_press_threshold:
+      name: Long press threshold
+      description: Time in seconds after a press is regarded as long.
+      default: 0.5
+      selector:
+        number:
+          min: 0.1
+          max: 10
+          step: 0.1
+          unit_of_measurement: "s"
+          mode: box
+
+    top_section:
+      name: Top
+      input:
+        top_press:
+          name: Press action
+          description: Execute this action when top is pressed initially.
+          default: []
+          selector:
+            action: {}
+        top_short_release:
+          name: Short release action
+          description: Execute this action when top is released after a short press.
+          default: []
+          selector:
+            action: {}
+        top_long_press:
+          name: Long press action
+          description: Execute this action when top is pressed for longer then the threshold.
+          default: []
+          selector:
+            action: {}
+        top_long_release:
+          name: Long release action
+          description: Execute this action when top is released after a long press.
+          default: []
+          selector:
+            action: {}
+            
+    bottom_section:
+      name: Bottom
+      input:
+        bottom_press:
+          name: Press action
+          description: Execute this action when bottom is pressed initially.
+          default: []
+          selector:
+            action: {}
+        bottom_short_release:
+          name: Short release action
+          description: Execute this action when bottom is released after a short press.
+          default: []
+          selector:
+            action: {}
+        bottom_long_press:
+          name: Long press action
+          description: Execute this action when bottom is pressed for longer then the threshold.
+          default: []
+          selector:
+            action: {}
+        bottom_long_release:
+          name: Long release action
+          description: Execute this action when bottom is released after a long press.
+          default: []
+          selector:
+            action: {}
+
+triggers:
+  - domain: mqtt
+    device_id: !input device
+    type: action
+    subtype: press_1
+    trigger: device
+    id: press_1
+  - domain: mqtt
+    device_id: !input device
+    type: action
+    subtype: press_2
+    trigger: device
+    id: press_2
+  - domain: mqtt
+    device_id: !input device
+    type: action
+    subtype: press_3
+    trigger: device
+    id: press_3
+  - domain: mqtt
+    device_id: !input device
+    type: action
+    subtype: press_4
+    trigger: device
+    id: press_4
+  - domain: mqtt
+    device_id: !input device
+    type: action
+    subtype: press_1_and_3
+    trigger: device
+    id: press_1_and_3
+  - domain: mqtt
+    device_id: !input device
+    type: action
+    subtype: press_2_and_4
+    trigger: device
+    id: press_2_and_4
+
+actions:
+  - parallel:
+    # Initial press
+    - choose:
+      - conditions:
+        - condition: trigger
+          id:
+            - press_1
+            - press_3
+            - press_1_and_3
+        sequence: !input top_press
+      - conditions:
+        - condition: trigger
+          id:
+            - press_2
+            - press_4
+            - press_2_and_4
+        sequence: !input bottom_press
+    - sequence:
+      # Wait for short release (or long press)
+      - wait_for_trigger:
+        - domain: mqtt
+          device_id: !input device
+          type: action
+          subtype: release_1
+          trigger: device
+        - domain: mqtt
+          device_id: !input device
+          type: action
+          subtype: release_2
+          trigger: device
+        - domain: mqtt
+          device_id: !input device
+          type: action
+          subtype: release_3
+          trigger: device
+        - domain: mqtt
+          device_id: !input device
+          type: action
+          subtype: release_4
+          trigger: device
+        - domain: mqtt
+          device_id: !input device
+          type: action
+          subtype: release_1_and_3
+          trigger: device
+        - domain: mqtt
+          device_id: !input device
+          type: action
+          subtype: release_2_and_4
+          trigger: device
+        timeout: !input long_press_threshold
+      - if:
+          - condition: template
+            value_template: "{{ wait.completed }}"
+        then:
+          # Short release
+          - choose:
+            - conditions:
+              - condition: trigger
+                id:
+                  - press_1
+                  - press_3
+                  - press_1_and_3
+              sequence: !input top_short_release
+            - conditions:
+              - condition: trigger
+                id:
+                  - press_2
+                  - press_4
+                  - press_2_and_4
+              sequence: !input bottom_short_release
+        else:
+          - parallel:
+            # Long press
+            - choose:
+              - conditions:
+                - condition: trigger
+                  id:
+                    - press_1
+                    - press_3
+                    - press_1_and_3
+                sequence: !input top_long_press
+              - conditions:
+                - condition: trigger
+                  id:
+                    - press_2
+                    - press_4
+                    - press_2_and_4
+                sequence: !input bottom_long_press
+            - sequence:
+              # Wait for long release
+              - wait_for_trigger:
+                - domain: mqtt
+                  device_id: !input device
+                  type: action
+                  subtype: release_1
+                  trigger: device
+                - domain: mqtt
+                  device_id: !input device
+                  type: action
+                  subtype: release_2
+                  trigger: device
+                - domain: mqtt
+                  device_id: !input device
+                  type: action
+                  subtype: release_3
+                  trigger: device
+                - domain: mqtt
+                  device_id: !input device
+                  type: action
+                  subtype: release_4
+                  trigger: device
+                - domain: mqtt
+                  device_id: !input device
+                  type: action
+                  subtype: release_1_and_3
+                  trigger: device
+                - domain: mqtt
+                  device_id: !input device
+                  type: action
+                  subtype: release_2_and_4
+                  trigger: device
+              # Long release
+              - choose:
+                - conditions:
+                  - condition: trigger
+                    id:
+                      - press_1
+                      - press_3
+                      - press_1_and_3
+                  sequence: !input top_long_release
+                - conditions:
+                  - condition: trigger
+                    id:
+                      - press_2
+                      - press_4
+                      - press_2_and_4
+                  sequence: !input bottom_long_release
+
+mode: restart
